@@ -7,27 +7,23 @@ import argparse
 from keras.models import load_model
 from joblib import load
 
-# --- PATH SETUP (CRITICAL FIX) ---
-# Get the absolute path of the directory containing this script
+# --- PATH SETUP ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Add this directory to sys.path so we can import forward_sim regardless of CWD
 sys.path.append(BASE_DIR)
 
 # Import Physics
 from forward_sim import air_sim, GRAVITY_VEC, BALL_MASS
 
-# --- Configuration using Absolute Paths ---
+# --- Configuration ---
 MODEL_PATH = os.path.join(BASE_DIR, "cricket_trajectory_model.keras")
 PREPROCESSOR_PATH = os.path.join(BASE_DIR, "scaler_X.joblib")
 SCALER_Y_PATH = os.path.join(BASE_DIR, "scaler_y.joblib")
 
-# --- Bins (Must match Training exactly) ---
+# --- Bins ---
 V_BINS = [0, 22, 26, np.inf]
 V_LABELS = ['Low', 'Medium', 'High']
-
 W_MAG_BINS = [0, 150, 220, np.inf]
 W_MAG_LABELS = ['Low', 'Medium', 'High']
-
 W_ANGLE_BINS = [-np.inf, -10, 10, np.inf]
 W_ANGLE_LABELS = ['Negative_Spin', 'Neutral_Spin', 'Positive_Spin']
 
@@ -42,7 +38,6 @@ def get_args():
     return parser.parse_args()
 
 def write_error(output_path, message):
-    """Writes an error message to the output JSON so Blender can see it."""
     try:
         with open(output_path, 'w') as f:
             json.dump({"error": message}, f, indent=4)
@@ -54,10 +49,9 @@ def main():
 
     # 1. Load AI Artifacts
     try:
-        # Check if files exist explicitly to give better errors
         if not os.path.exists(MODEL_PATH):
             raise FileNotFoundError(f"Model file not found at: {MODEL_PATH}")
-            
+        
         model = load_model(MODEL_PATH)
         preprocessor = load(PREPROCESSOR_PATH)
         scaler_y = load(SCALER_Y_PATH)
@@ -83,7 +77,6 @@ def main():
         y_pred_scaled = model.predict(X_scaled, verbose=0)
         y_pred = scaler_y.inverse_transform(y_pred_scaled)
         
-        # Unpack predictions
         v_mag, phi, theta, w_mag, w_angle = y_pred[0]
         
     except Exception as e:
@@ -92,7 +85,6 @@ def main():
 
     # 4. Run Physics Simulation
     try:
-        # Convert parameters to vectors
         phi_rad = np.radians(phi)
         theta_rad = np.radians(theta)
         w_angle_rad = np.radians(w_angle)
@@ -107,7 +99,6 @@ def main():
         w_y = w_mag * np.cos(w_angle_rad)
         w_in = np.array([w_x, w_y, 0])
         
-        # Run full trajectory sim with bounce
         trajectory = air_sim(pos_in, v_in, 60, GRAVITY_VEC, BALL_MASS, w_in, 
                              return_trajectory=True, simulate_bounce=True)
     except Exception as e:
@@ -117,6 +108,10 @@ def main():
     # 5. Export
     output_data = {
         "status": "success",
+        "target": {  # NEW FIELD
+            "x": args.target[0],
+            "y": args.target[1]
+        },
         "parameters": {
             "v_mag": float(v_mag),
             "phi": float(phi),

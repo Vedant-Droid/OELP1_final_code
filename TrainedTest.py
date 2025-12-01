@@ -108,7 +108,7 @@ def main():
 
     stats = f"""
 ==================================================
-TEST RESULTS ({SAMPLE_SIZE} samples)
+TEST RESULTS TOPSPIN({SAMPLE_SIZE} samples)
 ==================================================
 Mean Absolute Error X : {np.mean(np.abs(error_x)):.4f} m
 Mean Absolute Error Y : {np.mean(np.abs(error_y)):.4f} m
@@ -116,7 +116,7 @@ Mean Distance Error   : {np.mean(dist_error):.4f} m
 ==================================================
     """
     print(stats)
-    with open(RESULTS_FILE, "w") as f:
+    with open(RESULTS_FILE, "+a") as f:
         f.write(stats)
 
     print(f"Completed in {time.time() - start_time:.2f} seconds")

@@ -28,9 +28,11 @@ def plot_traj():
     if not trajectory:
         print("No trajectory points found.")
         return
+    
+    # Extract Target (NEW)
+    target = data.get("target", None)
 
     # Extract Coordinates
-    # position is [x, y, z]
     xs = [pt['position'][0] for pt in trajectory]
     ys = [pt['position'][1] for pt in trajectory]
     zs = [pt['position'][2] for pt in trajectory]
@@ -45,32 +47,40 @@ def plot_traj():
     fig.suptitle(f"Cricket Ball Trajectory\n{title_str}", fontsize=14)
 
     # 1. Top View (X vs Y)
-    ax1.plot(xs, ys, 'b-', label='Path')
+    ax1.plot(xs, ys, 'b-', label='Actual Path')
+    
+    # Plot Target Marker (NEW)
+    if target:
+        ax1.plot(target['x'], target['y'], 'rx', markersize=12, markeredgewidth=3, label='Target Point')
+        # Optional: Draw a line from last point to target to visualize error
+        # ax1.plot([xs[-1], target['x']], [ys[-1], target['y']], 'r--', alpha=0.3)
+
     ax1.set_ylabel('Pitch Width (Y) [m]')
     ax1.set_title('Top View (Swing/Drift)')
     ax1.grid(True, linestyle='--', alpha=0.7)
     
     # Draw Stumps and Crease Lines
-    ax1.axhline(0, color='k', linewidth=0.8, alpha=0.5) # Center line
-    ax1.axvline(0, color='k', linewidth=1) # Bowling Crease
-    ax1.axvline(20.12, color='r', linewidth=2, label='Stumps') # Batting Crease
-    ax1.fill_between([0, 20.12], -1.52, 1.52, color='green', alpha=0.1, label='Pitch Area') # Approx pitch width
+    ax1.axhline(0, color='k', linewidth=0.8, alpha=0.5) 
+    ax1.axvline(0, color='k', linewidth=1) 
+    ax1.axvline(20.12, color='r', linewidth=2, label='Stumps')
+    ax1.fill_between([0, 20.12], -1.52, 1.52, color='green', alpha=0.1, label='Pitch Area')
     ax1.legend()
-    # Set limits to make it look like a pitch
     ax1.set_ylim(-2.0, 2.0)
 
     # 2. Side View (X vs Z)
     ax2.plot(xs, zs, 'g-', label='Height')
+    
+    # Plot Target Marker on Side View (X vs Z=0) (NEW)
+    if target:
+        ax2.plot(target['x'], 0, 'rx', markersize=12, markeredgewidth=3, label='Target Length')
+
     ax2.set_xlabel('Distance down Pitch (X) [m]')
     ax2.set_ylabel('Height (Z) [m]')
     ax2.set_title('Side View (Bounce)')
     ax2.grid(True, linestyle='--', alpha=0.7)
     
-    # Draw Ground and Stumps
-    ax2.axhline(0, color='k', linewidth=2) # Ground
+    ax2.axhline(0, color='k', linewidth=2)
     ax2.axvline(20.12, color='r', linewidth=2, linestyle='--', label='Stumps (0.71m)')
-    
-    # Standard stump height is roughly 0.71m (28 inches)
     ax2.plot([20.12, 20.12], [0, 0.711], 'r-', linewidth=3)
     
     ax2.legend()
@@ -78,7 +88,6 @@ def plot_traj():
 
     plt.tight_layout()
     
-    # SAVE instead of show
     print(f"Saving plot to {OUTPUT_IMAGE}...")
     plt.savefig(OUTPUT_IMAGE)
     print("Done.")
